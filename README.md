@@ -9,6 +9,7 @@ The following **required** functionality is completed:
 * [✅] Search OMDb database from title 
 * [✅] Parse JSON and display necessary information
 * [✅] Allow sharing, feedback, and IMDB access through implicit intent
+* [✅] Display movie poster using Glide
 
 The following **extensions** are implemented:
 * N/A
