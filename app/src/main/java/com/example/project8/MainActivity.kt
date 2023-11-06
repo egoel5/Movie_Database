@@ -4,13 +4,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
 import com.bumptech.glide.Glide
 import retrofit2.Call
 import retrofit2.Callback
@@ -20,6 +20,7 @@ import retrofit2.Response
 class MainActivity : AppCompatActivity() {
     val TAG = "MainActivity"
 
+    // set up lateinits for every view on MainActivity
     lateinit var ombdApiClient : OmdbService
     lateinit var tvTitle : TextView
     lateinit var tvRating : TextView
@@ -38,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // initialize all views
         ombdApiClient = OMDbApiClient.getOMDbApi()!!
         tvTitle = findViewById(R.id.tvTitle)
         tvRating = findViewById(R.id.tvRating)
@@ -52,9 +54,16 @@ class MainActivity : AppCompatActivity() {
         butShare = findViewById(R.id.imgButShare)
         butFeedback = findViewById(R.id.imgButFeedback)
 
-        tvRating.isVisible = false
-        butShare.isVisible = false
-
+        /**
+         * When search button is clicked:
+         * - set searchTitle to etTitle.text
+         * - searchMovies using searchTitle from ombdApiClient
+         * - onResponse:
+         *      - make tvRating and butShare visible, then call displayData to fill all values
+         *      - set the sendIntent for share button
+         * - onFailure:
+         *      - Log failure
+         */
         butSearch.setOnClickListener {
             val searchTitle = etTitle.text.toString()
             ombdApiClient.searchMovies(searchTitle).enqueue(object : Callback<MovieList> {
@@ -67,8 +76,8 @@ class MainActivity : AppCompatActivity() {
                         Log.w(TAG, "Did not receive valid response body from Yelp API... exiting")
                         return
                     }
-                    tvRating.isVisible = true
-                    butShare.isVisible = true
+                    tvRating.visibility = View.VISIBLE
+                    butShare.visibility = View.VISIBLE
                     displayData(response.body()!!)
                     sendIntent= Intent().apply {
                         action = Intent.ACTION_SEND
@@ -83,17 +92,28 @@ class MainActivity : AppCompatActivity() {
             })
         }
 
+        /**
+         * when IMDB Link is clicked, set url and intent to go to url and then startActivity and go to IMDB page
+         */
         tvImdbLink.setOnClickListener {
             val url: String = tvImdbLink.text.toString()
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(intent)
         }
 
+        /**
+         * when share button is clicked, set intent to shareIntent and then startActivity to display share screen
+         */
         butShare.setOnClickListener {
             val shareIntent = Intent.createChooser(sendIntent, null)
             startActivity(shareIntent)
         }
 
+        /**
+         * when feedback button is clicked on toolbar, set email recipient, subject and body
+         * then build an email using the above subject and body, then set mailIntent and startActivity
+         * sending the mail
+         */
         butFeedback.setOnClickListener{
             val to = "egoel13@gmail.com"
             val subject = "User Feedback for Movie Database"
@@ -109,6 +129,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * displayData(MovieList)
+     *
+     * set tvTitle text to movie's Title value
+     * set tvRating text to movie's Rated value
+     * set tvGenre text to movie's Genre value
+     * set tvIMDB rating to movie's imdbRating value out of 10
+     * set tvRelease to movie's Year value
+     * set tvRuntime to movie's Runtime value
+     * set tvImdbLink text to default imdb url + movie's imdb id
+     * set imgPoster image to movie's poster using Glide
+     */
     private fun displayData(data: MovieList) {
         tvTitle.text = data.Title
         tvRating.text = data.Rated
